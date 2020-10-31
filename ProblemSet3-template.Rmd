@@ -12,10 +12,10 @@ output:
 library(tidyverse)
 
 # Loading in the cleaned survey Data
-survey_data <- read_csv("C:/Users/Sammi-Jo/Desktop/PS3/outputs/survey_data.csv")
+survey_data <- read_csv("survey_data.csv")
 
 # Loading in the cleaned census Data
-census_data <- read_csv("C:/Users/Sammi-Jo/Desktop/PS3/outputs/census_data.csv")
+census_data <- read_csv("census_data.csv")
 
 ```
 
