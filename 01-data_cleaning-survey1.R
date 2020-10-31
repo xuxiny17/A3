@@ -13,7 +13,7 @@
 #### Workspace setup ####
 library(haven)
 library(tidyverse)
-setwd("~/Desktop/脑残/STA304/A3")
+setwd("~/Desktop/脑残/STA304/A3") # change it to your own directory while using
 # Read in the raw data (You might need to change this if you use a different dataset)
 raw_data <- read_dta("ns20200625/ns20200625.dta")
 # Add the labels

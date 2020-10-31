@@ -13,7 +13,7 @@
 library(haven)
 library(tidyverse)
 # Read in the raw data.
-setwd("~/Desktop/脑残/STA304/A3")
+setwd("~/Desktop/脑残/STA304/A3") # change it to your own directory while using
 raw_data <- read_dta("usa_00003.dta")
 
 
