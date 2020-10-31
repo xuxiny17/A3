@@ -114,7 +114,7 @@ his_age_sex[his_age_sex=="mexican"]<-"Mexican"
 his_age_sex[his_age_sex=="puerto rican"]<-"Puerto Rican"
 his_age_sex[his_age_sex=="cuban"]<-"Cuban"
 
-#TODO: figure out if we could use the code below or simply deleate it.
+#TODO: figure out if we could use the code below or simply delete it.
 # his_age_sex <- his_age_sex %>% rename(hispan = hispanic) %>% 
 #   mutate(gender = ifelse(hispan == "not hispanic","Not Hispanic")) %>% 
 #   mutate(gender = ifelse(hispan == "mexican","Mexican")) %>% 
