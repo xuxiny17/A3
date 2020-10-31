@@ -125,7 +125,7 @@ his_age_sex[his_age_sex=="cuban"]<-"Cuban"
 ```
 
 ```{r Process estimation, include=FALSE}
-# TODO: The below wasn't edited
+# TODO: The below was edited. See if any changes was needed. Maybe a caluculation of p-value or something.
 # Here I will perform the post-stratification calculation
 his_age_sex$estimate <-
   model %>%
