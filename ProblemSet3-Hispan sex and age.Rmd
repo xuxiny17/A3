@@ -64,6 +64,9 @@ futher_survey_cleaning <- read_csv("futher_survey_cleaning.csv")
 
 # Loading in the cleaned his_age_sex Data
 his_age_sex <- read_csv("his_age_sex.csv")
+
+# Loading in the new cleaned his_age_sex Data
+n_his <- read_csv("n_his.csv")
 ```
 
 # Title of your Report
@@ -108,7 +111,9 @@ In order to estimate the proportion of voters who will vote for Donald Trump I n
 # Data editing
 glimpse(his_age_sex)
 glimpse(survey_data)
-his_age_sex<- his_age_sex %>% rename(gender = sex) %>% mutate(gender = ifelse(gender == "male","Male","Female"))
+# Data with NA in citizen category.
+his_age_sex<- his_age_sex %>% 
+  rename(gender = sex) %>% mutate(gender = ifelse(gender == "male","Male","Female"))
 his_age_sex <- his_age_sex  %>% mutate(age = age + 2)
 his_age_sex<- his_age_sex %>% rename(hispanic = hispan)
 his_age_sex[his_age_sex=="not hispanic"]<-"Not Hispanic"
@@ -116,6 +121,17 @@ his_age_sex[his_age_sex=="other"]<-"Other Hispanic"
 his_age_sex[his_age_sex=="mexican"]<-"Mexican"
 his_age_sex[his_age_sex=="puerto rican"]<-"Puerto Rican"
 his_age_sex[his_age_sex=="cuban"]<-"Cuban"
+
+# Data without NA in citizen category. 
+n_his<- n_his %>% 
+  rename(gender = sex) %>% mutate(gender = ifelse(gender == "male","Male","Female"))
+n_his <- n_his  %>% mutate(age = age + 2)
+n_his<- n_his %>% rename(hispanic = hispan)
+n_his[n_his=="not hispanic"]<-"Not Hispanic"
+n_his[n_his=="other"]<-"Other Hispanic"
+n_his[n_his=="mexican"]<-"Mexican"
+n_his[n_his=="puerto rican"]<-"Puerto Rican"
+n_his[n_his=="cuban"]<-"Cuban"
 
 #TODO: figure out if we could use the code below or simply delete it.
 # his_age_sex <- his_age_sex %>% rename(hispan = hispanic) %>% 
@@ -128,8 +144,9 @@ his_age_sex[his_age_sex=="cuban"]<-"Cuban"
 ```
 
 ```{r Process estimation}
-# TODO: The below was edited. See if any changes was needed. Maybe a caluculation of p-value or something.
+# TODO: The below was edited. See if any changes was needed. Maybe a calculation of p-value or something.
 # Here I will perform the post-stratification calculation
+# Data with NA in citizen category.
 his_age_sex$estimate_trump <-
   modelt %>%
   predict(newdata = his_age_sex, type = "response")
@@ -143,6 +160,23 @@ his_age_sex %>%
   summarise(alp_predict = sum(alp_predict_prop)/sum(n))
 
 his_age_sex %>%
+  mutate(alp_predict_prop = estimate_biden*n) %>%
+  summarise(alp_predict = sum(alp_predict_prop)/sum(n))
+
+# Data without NA in citizen category. 
+n_his$estimate_trump <-
+  modelt %>%
+  predict(newdata = n_his, type = "response")
+
+n_his$estimate_biden <-
+  modelb %>%
+  predict(newdata = n_his, type = "response")
+
+n_his %>%
+  mutate(alp_predict_prop = estimate_trump*n) %>%
+  summarise(alp_predict = sum(alp_predict_prop)/sum(n))
+
+n_his %>%
   mutate(alp_predict_prop = estimate_biden*n) %>%
   summarise(alp_predict = sum(alp_predict_prop)/sum(n))
 ```
