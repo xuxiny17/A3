@@ -43,8 +43,8 @@ Where $y$ represents the proportion of voters who will vote for Donald Trump. Si
 ```{r, include=FALSE}
 
 # Creating the Model
-modelr <- glm(vote_trump ~ age + gender + race, 
-            data=survey_data, family="binomial")
+modelr <- glm(vote_trump ~ age + gender + race_ethnicity, 
+            data=survey_data_1, family="binomial")
 
 # Model Results (to Report in Results section)
 summary(modelr)
@@ -61,11 +61,19 @@ In order to estimate the proportion of voters who will vote for Donald Trump I n
 # Data editing
 glimpse(race_age_sex)
 race_age_sex <- race_age_sex %>% rename(gender = sex) %>% mutate(gender = ifelse(gender == "male","Male","Female"))
+race_age_sex <- race_age_sex %>% rename(race_ethnicity = race)
+race_age_sex[race_age_sex=="white"]<-"White"
+race_age_sex[race_age_sex=="black/african american/negro"]<-"Black, or African American"
+race_age_sex[race_age_sex=="american indian or alaska native"]<-"American Indian or Alaska Native"
+race_age_sex[race_age_sex=="chinese"]<-"Asian (Chinese)"
+race_age_sex[race_age_sex=="japanese"]<-"Asian (Japanese)"
+race_age_sex[race_age_sex=="other asian or pacific islander"]<-"Some other race"
+
 
 # Here I will perform the post-stratification calculation
-census_data$logodds_estimate <-
+race_age_sex$logodds_estimate <-
   model %>%
-  predict(newdata = census_data)
+  predict(newdata = race_age_sex)
 
 census_data$estimate <-
   exp(census_data$logodds_estimate)/(1+exp(census_data$logodds_estimate))
