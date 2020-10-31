@@ -84,17 +84,20 @@ $$ log(\frac{p}{1-p}) = \beta_0+\beta_1  x_{age} + \beta_2x_{Male} + \beta_3x_{h
 
 Where $y$ represents the proportion of voters who will vote for Donald Trump. Similarly, $\beta_0$ represents the intercept of the model, and is the probability of voting for Donald Trump at age 0. Additionally, $\beta_1$ represents the slope of the model. So, for everyone one unit increase in age, we expect a $\beta_1$ increase in the probability of voting for Donald Trump.
 
-```{r Model creation, include=FALSE}
+```{r Model creation}
 
 # Creating the Model
-modelh <- glm(vote_trump ~ age + gender + hispanic, 
-            data=survey_data, family="binomial")
+modelt <- glm(vote_trump ~ age + gender + hispanic, 
+            data=futher_survey_cleaning, family="binomial")
 
+modelb <- glm(vote_biden ~ age + gender + hispanic, 
+            data=futher_survey_cleaning, family="binomial")
 # Model Results (to Report in Results section)
 # summary(modelh)
 # OR
 # broom::tidy(model)
-summary(modelh)
+summary(modelt)
+summary(modelb)
 ```
 
 ## Post-Stratification 
@@ -124,18 +127,24 @@ his_age_sex[his_age_sex=="cuban"]<-"Cuban"
 
 ```
 
-```{r Process estimation, include=FALSE}
+```{r Process estimation}
 # TODO: The below was edited. See if any changes was needed. Maybe a caluculation of p-value or something.
 # Here I will perform the post-stratification calculation
-his_age_sex$estimate <-
-  model %>%
-  predict(newdata = his_age_sex)
+his_age_sex$estimate_trump <-
+  modelt %>%
+  predict(newdata = his_age_sex, type = "response")
+
+his_age_sex$estimate_biden <-
+  modelb %>%
+  predict(newdata = his_age_sex, type = "response")
 
 his_age_sex %>%
-  mutate(alp_predict_prop = estimate*n) %>%
+  mutate(alp_predict_prop = estimate_trump*n) %>%
   summarise(alp_predict = sum(alp_predict_prop)/sum(n))
 
-
+his_age_sex %>%
+  mutate(alp_predict_prop = estimate_biden*n) %>%
+  summarise(alp_predict = sum(alp_predict_prop)/sum(n))
 ```
 
 
