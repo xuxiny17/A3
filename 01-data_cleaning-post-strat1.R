@@ -1,8 +1,8 @@
 #### Preamble ####
-# Purpose: Prepare and clean the survey data downloaded from [...UPDATE ME!!!!!]
-# Author: Rohan Alexander and Sam Caetano [CHANGE THIS TO YOUR NAME!!!!]
-# Data: 22 October 2020
-# Contact: rohan.alexander@utoronto.ca [PROBABLY CHANGE THIS ALSO!!!!]
+# Purpose: Prepare and clean the survey data downloaded from https://usa.ipums.org/usa-action/data_requests/download
+# Author: Xinyi Xu [Add to this!!!]
+# Data: 30 October 2020
+# Contact: tiffanyandjojo.xu@mail.utoronto.ca [Add to this!!!]
 # License: MIT
 # Pre-requisites: 
 # - Need to have downloaded the ACS data and saved it to inputs/data
@@ -13,30 +13,32 @@
 library(haven)
 library(tidyverse)
 # Read in the raw data.
-setwd("C:/Users/Sammi-Jo/Desktop/PS3")
-raw_data <- read_dta("inputs/usa_00002.dta.gz")
+setwd("~/Desktop/脑残/STA304/A3")
+raw_data <- read_dta("usa_00003.dta")
 
 
 # Add the labels
 raw_data <- labelled::to_factor(raw_data)
+head(raw_data)
 
 # Just keep some variables that may be of interest (change 
 # this depending on your interests)
 reduced_data <- 
   raw_data %>% 
-  select(#region,
-         #stateicp,
+  select(region,
+         stateicp,
          sex, 
-         age)#, 
-         #race, 
-         #hispan,
-         #marst, 
-         #bpl,
-         #citizen,
-         #educd,
-         #labforce,
-         #labforce)
-         
+         age, 
+         race, 
+         marst,
+         hispan,
+         bpl,
+         citizen,
+         educd,
+         empstat,
+         labforce,
+         inctot,
+         ftotinc)
 
 #### What's next? ####
 
@@ -58,7 +60,7 @@ reduced_data$age <- as.integer(reduced_data$age)
 
 # Saving the census data as a csv file in my
 # working directory
-write_csv(reduced_data, "outputs/census_data.csv")
+write_csv(reduced_data, "census_data.csv")
 
 
 
