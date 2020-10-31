@@ -84,29 +84,30 @@ $$ log(\frac{p}{1-p}) = \beta_0+\beta_1  x_{age} + \beta_2x_{Male} + \beta_3x_{h
 
 Where $y$ represents the proportion of voters who will vote for Donald Trump. Similarly, $\beta_0$ represents the intercept of the model, and is the probability of voting for Donald Trump at age 0. Additionally, $\beta_1$ represents the slope of the model. So, for everyone one unit increase in age, we expect a $\beta_1$ increase in the probability of voting for Donald Trump.
 
-```{r, include=FALSE}
+```{r Model creation, include=FALSE}
 
 # Creating the Model
 modelh <- glm(vote_trump ~ age + gender + hispanic, 
             data=survey_data, family="binomial")
 
 # Model Results (to Report in Results section)
-summary(modelh)
+# summary(modelh)
 # OR
 # broom::tidy(model)
-
+summary(modelh)
 ```
 
 ## Post-Stratification 
 
 In order to estimate the proportion of voters who will vote for Donald Trump I need to perform a post-stratification analysis. Here I create cells based off different ages. Using the model described in the previous sub-section I will estimate the proportion of voters in each age bin. I will then weight each proportion estimate (within each bin) by the respective population size of that bin and sum those values and divide that by the entire population size. 
 
-```{r, include=FALSE}
+```{r Data editing, include=FALSE}
 # Data editing
 glimpse(his_age_sex)
 glimpse(survey_data)
+his_age_sex<- his_age_sex %>% rename(gender = sex) %>% mutate(gender = ifelse(gender == "male","Male","Female"))
 his_age_sex <- his_age_sex  %>% mutate(age = age + 2)
-his_age_sex %>% rename(hispanic = hispan)
+his_age_sex<- his_age_sex %>% rename(hispanic = hispan)
 his_age_sex[his_age_sex=="not hispanic"]<-"Not Hispanic"
 his_age_sex[his_age_sex=="other"]<-"Other Hispanic"
 his_age_sex[his_age_sex=="mexican"]<-"Mexican"
@@ -121,14 +122,16 @@ his_age_sex[his_age_sex=="cuban"]<-"Cuban"
 #   mutate(gender = ifelse(hispan == "cuban","Cuban")) %>% 
 #   mutate(gender = ifelse(hispan == "other","Other Hispanic"))
 
+```
 
+```{r Process estimation, include=FALSE}
 # TODO: The below wasn't edited
 # Here I will perform the post-stratification calculation
-census_data$estimate <-
+his_age_sex$estimate <-
   model %>%
-  predict(newdata = census_data)
+  predict(newdata = his_age_sex)
 
-census_data %>%
+his_age_sex %>%
   mutate(alp_predict_prop = estimate*n) %>%
   summarise(alp_predict = sum(alp_predict_prop)/sum(n))
 
