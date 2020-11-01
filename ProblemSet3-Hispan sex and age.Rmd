@@ -10,6 +10,7 @@ output:
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(lme4)
 
 # Loading in the cleaned survey Data
 survey_data <- read_csv("survey_data.csv")
@@ -65,8 +66,121 @@ futher_survey_cleaning <- read_csv("futher_survey_cleaning.csv")
 # Loading in the cleaned his_age_sex Data
 his_age_sex <- read_csv("his_age_sex.csv")
 
+his_age_sex<-his_age_sex %>% 
+  mutate(state = case_when(stateicp=="alabama"~"AL",
+                           stateicp=="alaska"~"AK",
+                           stateicp=="arizona"~"AZ",
+                           stateicp=="arkansas"~"AR",
+                           stateicp=="california"~"CA",
+                           stateicp=="colorado"~"CO",
+                           stateicp=="connecticut"~"CT",
+                           stateicp=="delaware"~"DE",
+                           stateicp=="florida"~"FL",
+                           stateicp=="georgia"~"GA",
+                           stateicp=="hawaii"~"HI",
+                           stateicp=="idaho"~"ID",
+                           stateicp=="illinois"~"IL",
+                           stateicp=="indiana"~"IN",
+                           stateicp=="iowa"~"IA",
+                           stateicp=="kansas"~"KS",
+                           stateicp=="kentucky"~"KY",
+                           stateicp=="louisiana"~"LA",
+                           stateicp=="maine"~"ME",
+                           stateicp=="maryland"~"MD",
+                           stateicp=="massachusetts"~"MA",
+                           stateicp=="michigan"~"MI",
+                           stateicp=="minnesota"~"MN",
+                           stateicp=="mississippi"~"MS",
+                           stateicp=="missouri"~"MO",
+                           stateicp=="montana"~"MT",
+                           stateicp=="nebraska"~"NE",
+                           stateicp=="nevada"~"NV",
+                           stateicp=="new hampshire"~"NH",
+                           stateicp=="new jersey"~"NJ",
+                           stateicp=="new mexico"~"NM",
+                           stateicp=="new york"~"NY",
+                           stateicp=="north carolina"~"NC",
+                           stateicp=="north dakota"~"ND",
+                           stateicp=="ohio"~"OH",
+                           stateicp=="oklahoma"~"OK",
+                           stateicp=="oregon"~"OR",
+                           stateicp=="pennsylvania"~"PA",
+                           stateicp=="rhode island"~"RI",
+                           stateicp=="south carolina"~"SC",
+                           stateicp=="south dakota"~"SD",
+                           stateicp=="tennessee"~"TN",
+                           stateicp=="texas"~"TX",
+                           stateicp=="utah"~"UT",
+                           stateicp=="vermont"~"VT",
+                           stateicp=="virginia"~"VA",
+                           stateicp=="washington"~"WA",
+                           stateicp=="west virginia"~"WV",
+                           stateicp=="wisconsin"~"WI",
+                           stateicp=="wyoming"~"WY",
+                           stateicp=="district of columbia"~"DC")) 
+his_age_sex$stateicp<-NULL
+
+
 # Loading in the new cleaned his_age_sex Data
 n_his <- read_csv("n_his.csv")
+
+n_his<-n_his %>% 
+  mutate(state = case_when(stateicp=="alabama"~"AL",
+                           stateicp=="alaska"~"AK",
+                           stateicp=="arizona"~"AZ",
+                           stateicp=="arkansas"~"AR",
+                           stateicp=="california"~"CA",
+                           stateicp=="colorado"~"CO",
+                           stateicp=="connecticut"~"CT",
+                           stateicp=="delaware"~"DE",
+                           stateicp=="florida"~"FL",
+                           stateicp=="georgia"~"GA",
+                           stateicp=="hawaii"~"HI",
+                           stateicp=="idaho"~"ID",
+                           stateicp=="illinois"~"IL",
+                           stateicp=="indiana"~"IN",
+                           stateicp=="iowa"~"IA",
+                           stateicp=="kansas"~"KS",
+                           stateicp=="kentucky"~"KY",
+                           stateicp=="louisiana"~"LA",
+                           stateicp=="maine"~"ME",
+                           stateicp=="maryland"~"MD",
+                           stateicp=="massachusetts"~"MA",
+                           stateicp=="michigan"~"MI",
+                           stateicp=="minnesota"~"MN",
+                           stateicp=="mississippi"~"MS",
+                           stateicp=="missouri"~"MO",
+                           stateicp=="montana"~"MT",
+                           stateicp=="nebraska"~"NE",
+                           stateicp=="nevada"~"NV",
+                           stateicp=="new hampshire"~"NH",
+                           stateicp=="new jersey"~"NJ",
+                           stateicp=="new mexico"~"NM",
+                           stateicp=="new york"~"NY",
+                           stateicp=="north carolina"~"NC",
+                           stateicp=="north dakota"~"ND",
+                           stateicp=="ohio"~"OH",
+                           stateicp=="oklahoma"~"OK",
+                           stateicp=="oregon"~"OR",
+                           stateicp=="pennsylvania"~"PA",
+                           stateicp=="rhode island"~"RI",
+                           stateicp=="south carolina"~"SC",
+                           stateicp=="south dakota"~"SD",
+                           stateicp=="tennessee"~"TN",
+                           stateicp=="texas"~"TX",
+                           stateicp=="utah"~"UT",
+                           stateicp=="vermont"~"VT",
+                           stateicp=="virginia"~"VA",
+                           stateicp=="washington"~"WA",
+                           stateicp=="west virginia"~"WV",
+                           stateicp=="wisconsin"~"WI",
+                           stateicp=="wyoming"~"WY",
+                           stateicp=="district of columbia"~"DC")) 
+n_his$stateicp<-NULL
+
+unique(n_his$state)
+unique(futher_survey_cleaning$state)
+unique(his_age_sex$state)
 ```
 
 # Title of your Report
@@ -83,18 +197,19 @@ Here we are interested in predicting the popular vote outcome of the 2020 Americ
 ## Model Specifics
 I will (incorrectly) be using a linear regression model to model the proportion of voters who will vote for Donald Trump. This is a naive model. I will only be using age, which is recorded as a numeric variable, to model the probability of voting for Donald Trump. The simple linear regression model I am using is:
 
+#TODO change the following model interpretation
 $$ log(\frac{p}{1-p}) = \beta_0+\beta_1  x_{age} + \beta_2x_{Male} + \beta_3x_{hispanic} + \epsilon$$
 
 Where $y$ represents the proportion of voters who will vote for Donald Trump. Similarly, $\beta_0$ represents the intercept of the model, and is the probability of voting for Donald Trump at age 0. Additionally, $\beta_1$ represents the slope of the model. So, for everyone one unit increase in age, we expect a $\beta_1$ increase in the probability of voting for Donald Trump.
 
-```{r Model creation}
+```{r Model creation, warning=FALSE}
 
 # Creating the Model
-modelt <- glm(vote_trump ~ age + gender + hispanic, 
-            data=futher_survey_cleaning, family="binomial")
+modelt <- glmer(vote_trump ~ (1 + age|state) + gender + hispanic,
+                data=futher_survey_cleaning, family="binomial")
 
-modelb <- glm(vote_biden ~ age + gender + hispanic, 
-            data=futher_survey_cleaning, family="binomial")
+modelb <- glmer(vote_biden ~ (1 + age|state) + gender + hispanic, 
+                data=futher_survey_cleaning, family="binomial")
 # Model Results (to Report in Results section)
 # summary(modelh)
 # OR
@@ -181,6 +296,42 @@ n_his %>%
   summarise(alp_predict = sum(alp_predict_prop)/sum(n))
 ```
 
+```{r tester}
+# TODO: The following prediction does not seem to make sense, tell me about your conclusion. 
+vote_2020_prob_n<-predict(modelt,n_his[,c("age","gender","hispanic","state")],type="response")
+vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Joe Biden","Donald Trump")
+n_his.result<-cbind(n_his,vote_2020_pred_n)
+
+vote_2020_prob<-predict(modelt,his_age_sex[,c("age","gender","hispanic","state")],type="response")
+vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Joe Biden","Donald Trump")
+his_age_sex.result<-cbind(his_age_sex,vote_2020_pred)
+
+n_his.result$trump_votes<-ifelse(n_his.result$vote_2020_pred=="Donald Trump",n_his.result$perwt,0)
+n_his.result$biden_votes<-ifelse(n_his.result$vote_2020_pred=="Joe Biden",n_his.result$perwt,0)
+
+his_age_sex.result$trump_votes<-ifelse(his_age_sex.result$vote_2020_pred=="Donald Trump",his_age_sex.result$perwt,0)
+his_age_sex.result$biden_votes<-ifelse(his_age_sex.result$vote_2020_pred=="Joe Biden",his_age_sex.result$perwt,0)
+
+n_his.result %>% group_by(state) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_states
+predicted_states$winner<-ifelse(predicted_states$Trump>predicted_states$Biden,
+                                "Donald Trump","Joe Biden")
+
+predicted_states<-predicted_states %>% 
+  mutate(electoral_votes = case_when(state=="CA"~55,state=="TX"~38,state=="FL"~29,state=="NY"~29,state=="IL"~20,state=="PA"~20,state=="OH"~18,
+                                     state=="GA"~16,state=="MI"~16,state=="NC"~15,state=="NJ"~14,state=="VA"~13,state=="WA"~12,state=="AZ"~11,
+                                     state=="IN"~11,state=="MA"~11,state=="TN"~11,state=="MD"~10,state=="MN"~10,state=="MO"~10,state=="WI"~10,
+                                     state=="AL"~9,state=="CO"~9,state=="SC"~9,state=="KY"~8,state=="LA"~8,state=="CT"~7,state=="OK"~7,
+                                     state=="OR"~7,state=="AR"~6,state=="IA"~6,state=="KS"~6,state=="MS"~6,state=="NV"~6,state=="UT"~6,
+                                     state=="NE"~5,state=="NM"~5,state=="WV"~5,state=="HI"~4,state=="ID"~4,state=="ME"~4,state=="NH"~4,
+                                     state=="RI"~4,state=="AK"~3,state=="DE"~3,state=="MT"~3,state=="ND"~3,state=="SD"~3,state=="VT"~3,
+                                     state=="WY"~3,state=="DC"~3
+  )) 
+
+
+predicted_states %>% group_by(winner) %>% summarise(total_votes=sum(electoral_votes))->election_result
+election_result
+
+```
 
 # Results
 
