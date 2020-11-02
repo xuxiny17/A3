@@ -189,8 +189,7 @@ $$ p(Yi = Donald \ Trump | state_j) = logit^{-1}(\beta_{j0} + \beta_{ji}^{age} +
 
 Where $y$ represents the proportion of voters who will vote for Donald Trump. Similarly, $\beta_0$ represents the intercept of the model, and is the probability of voting for Donald Trump at age 0. Additionally, $\beta_1$ represents the slope of the model. So, for everyone one unit increase in age, we expect a $\beta_1$ increase in the probability of voting for Donald Trump.
 
-```{r Model creation, warning=FALSE}
-
+```{r Model creation, warning=FALSE, echo=FALSE}
 # Creating the Model
 modelt <- glmer(vote_trump ~ (1 + age|state) + gender + hispanic,
                 data=futher_survey_cleaning, family="binomial")
@@ -237,7 +236,7 @@ n_his[n_his=="cuban"]<-"Cuban"
 
 ```
 
-```{r Process estimation}
+```{r Process estimation, echo=FALSE}
 # TODO: The below was edited. See if any changes was needed. Maybe a calculation of p-value or something.
 # Here I will perform the post-stratification calculation
 # Data with NA in citizen category.
@@ -332,16 +331,48 @@ predicted_states<-predicted_states %>%
 
 predicted_states %>% group_by(winner) %>% summarise(total_votes=sum(electoral_votes))->election_result
 election_result
+
 ```
 
-```{r tester, warning=FALSE}
-library(expss)
+```{r Support rate}
+support_rate_trump <- 115/538
+support_rate_trump
+
+support_rate_biden <- 423/538
+support_rate_biden
+```
+
+```{r tester, warning=FALSE, echo=FALSE}
+library(tableHTML)
 n_his.result %>% group_by(hispanic) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_hispanic
 predicted_hispanic$winner<-ifelse(predicted_hispanic$Trump>predicted_hispanic$Biden,
                                 "Donald Trump","Joe Biden")
-glimpse(predicted_hispanic)
+# glimpse(predicted_hispanic)
+tableHTML(predicted_hispanic)
 ```
 
+```{r plot, warning=FALSE, echo=FALSE}
+n_his.result %>%
+  ggplot(aes(y = estimate_trump, x = forcats::fct_inorder(state), 
+             color = "Support rate estimate")) + geom_point() +
+  ylab("Proportion Support Trump") + xlab("State") + 
+  geom_point(data = n_his.result %>%
+               group_by(state, estimate_trump) %>% summarise(n = n()) %>% 
+               group_by(state) %>%
+               mutate(prop = n/sum(n))) + coord_flip()
+
+predicted_states %>%
+  filter(winner!="Joe Biden") %>%
+  ggplot(aes(y = electoral_votes, x = forcats::fct_inorder(state), 
+             color = "Election estimate")) + geom_point() +
+  ylab("State Support Trump") + xlab("Amount of the credit") + coord_flip()
+
+predicted_states %>%
+  filter(winner!="Donald Trump") %>%
+  ggplot(aes(y = electoral_votes, x = forcats::fct_inorder(state), 
+             color = "Election estimate")) + geom_point() +
+  ylab("State Support Biden") + xlab("Amount of the credit") + coord_flip()
+```
 # Results
 
 Here you will include all results. This includes descriptive statistics, graphs, figures, tables, and model results. Please ensure that everything is well formatted and in a report style. You must also provide an explanation of the results in this section. 
