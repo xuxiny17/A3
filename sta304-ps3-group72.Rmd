@@ -1,0 +1,483 @@
+---
+title: "Forecasting Elections of US2020"
+author: Xu Xinyi 1003941577, 
+        Minchen Cai 1000523800, 
+        Haonan Yang 1004949531, 
+        Mingkai Zhang 1004903063
+date: "2020/10/31"
+github link: https://github.com/xuxiny17/A3.git
+header-includes:
+   - \usepackage{bbm}
+   - \usepackage{threeparttable}
+   - \usepackage{booktabs}
+   - \usepackage{expex}
+output:
+  html_document:
+    df_print: paged
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(lme4)
+
+# Loading in the cleaned survey Data
+survey_data <- read_csv("survey_data.csv")
+
+# Through observation we found that some hispan types does not exist in 
+# his_age_sex.csv thus we mutate the missing hispan types to other hispan
+head(survey_data)
+
+survey_data[survey_data=="Colombian"]<-"Other Hispanic"
+survey_data[survey_data=="Ecuadorian"]<-"Other Hispanic"
+survey_data[survey_data=="Guatemalan"]<-"Other Hispanic"
+survey_data[survey_data=="Nicaraguan"]<-"Other Hispanic"
+survey_data[survey_data=="Panamanian"]<-"Other Hispanic"
+survey_data[survey_data=="Peruvian"]<-"Other Hispanic"
+survey_data[survey_data=="Salvadorean"]<-"Other Hispanic"
+survey_data[survey_data=="Spanish"]<-"Other Hispanic"
+survey_data[survey_data=="Venezuelan"]<-"Other Hispanic"
+
+# futher_survey_cleaning <- 
+#   survey_data %>% 
+#   select(vote_2020,
+#          gender,
+#          hispanic,
+#          race_ethnicity,
+#          household_income,
+#          education,
+#          state,
+#          age,
+#          vote_trump,
+#          vote_biden)
+#   
+# write_csv(futher_survey_cleaning, "futher_survey_cleaning.csv")
+
+# Loading in the cleaned census Data
+# census_data <- read_csv("census_data.csv")
+
+# Loading in the futher_survey_cleaning Data
+futher_survey_cleaning <- read_csv("futher_survey_cleaning.csv")
+
+# Loading in the cleaned his_age_sex Data
+his_age_sex <- read_csv("his_age_sex.csv")
+
+his_age_sex<-his_age_sex %>% 
+  mutate(state = case_when(stateicp=="alabama"~"AL",
+                           stateicp=="alaska"~"AK",
+                           stateicp=="arizona"~"AZ",
+                           stateicp=="arkansas"~"AR",
+                           stateicp=="california"~"CA",
+                           stateicp=="colorado"~"CO",
+                           stateicp=="connecticut"~"CT",
+                           stateicp=="delaware"~"DE",
+                           stateicp=="florida"~"FL",
+                           stateicp=="georgia"~"GA",
+                           stateicp=="hawaii"~"HI",
+                           stateicp=="idaho"~"ID",
+                           stateicp=="illinois"~"IL",
+                           stateicp=="indiana"~"IN",
+                           stateicp=="iowa"~"IA",
+                           stateicp=="kansas"~"KS",
+                           stateicp=="kentucky"~"KY",
+                           stateicp=="louisiana"~"LA",
+                           stateicp=="maine"~"ME",
+                           stateicp=="maryland"~"MD",
+                           stateicp=="massachusetts"~"MA",
+                           stateicp=="michigan"~"MI",
+                           stateicp=="minnesota"~"MN",
+                           stateicp=="mississippi"~"MS",
+                           stateicp=="missouri"~"MO",
+                           stateicp=="montana"~"MT",
+                           stateicp=="nebraska"~"NE",
+                           stateicp=="nevada"~"NV",
+                           stateicp=="new hampshire"~"NH",
+                           stateicp=="new jersey"~"NJ",
+                           stateicp=="new mexico"~"NM",
+                           stateicp=="new york"~"NY",
+                           stateicp=="north carolina"~"NC",
+                           stateicp=="north dakota"~"ND",
+                           stateicp=="ohio"~"OH",
+                           stateicp=="oklahoma"~"OK",
+                           stateicp=="oregon"~"OR",
+                           stateicp=="pennsylvania"~"PA",
+                           stateicp=="rhode island"~"RI",
+                           stateicp=="south carolina"~"SC",
+                           stateicp=="south dakota"~"SD",
+                           stateicp=="tennessee"~"TN",
+                           stateicp=="texas"~"TX",
+                           stateicp=="utah"~"UT",
+                           stateicp=="vermont"~"VT",
+                           stateicp=="virginia"~"VA",
+                           stateicp=="washington"~"WA",
+                           stateicp=="west virginia"~"WV",
+                           stateicp=="wisconsin"~"WI",
+                           stateicp=="wyoming"~"WY",
+                           stateicp=="district of columbia"~"DC")) 
+his_age_sex$stateicp<-NULL
+
+
+# Loading in the new cleaned his_age_sex Data
+n_his <- read_csv("n_his.csv")
+
+n_his<-n_his %>% 
+  mutate(state = case_when(stateicp=="alabama"~"AL",
+                           stateicp=="alaska"~"AK",
+                           stateicp=="arizona"~"AZ",
+                           stateicp=="arkansas"~"AR",
+                           stateicp=="california"~"CA",
+                           stateicp=="colorado"~"CO",
+                           stateicp=="connecticut"~"CT",
+                           stateicp=="delaware"~"DE",
+                           stateicp=="florida"~"FL",
+                           stateicp=="georgia"~"GA",
+                           stateicp=="hawaii"~"HI",
+                           stateicp=="idaho"~"ID",
+                           stateicp=="illinois"~"IL",
+                           stateicp=="indiana"~"IN",
+                           stateicp=="iowa"~"IA",
+                           stateicp=="kansas"~"KS",
+                           stateicp=="kentucky"~"KY",
+                           stateicp=="louisiana"~"LA",
+                           stateicp=="maine"~"ME",
+                           stateicp=="maryland"~"MD",
+                           stateicp=="massachusetts"~"MA",
+                           stateicp=="michigan"~"MI",
+                           stateicp=="minnesota"~"MN",
+                           stateicp=="mississippi"~"MS",
+                           stateicp=="missouri"~"MO",
+                           stateicp=="montana"~"MT",
+                           stateicp=="nebraska"~"NE",
+                           stateicp=="nevada"~"NV",
+                           stateicp=="new hampshire"~"NH",
+                           stateicp=="new jersey"~"NJ",
+                           stateicp=="new mexico"~"NM",
+                           stateicp=="new york"~"NY",
+                           stateicp=="north carolina"~"NC",
+                           stateicp=="north dakota"~"ND",
+                           stateicp=="ohio"~"OH",
+                           stateicp=="oklahoma"~"OK",
+                           stateicp=="oregon"~"OR",
+                           stateicp=="pennsylvania"~"PA",
+                           stateicp=="rhode island"~"RI",
+                           stateicp=="south carolina"~"SC",
+                           stateicp=="south dakota"~"SD",
+                           stateicp=="tennessee"~"TN",
+                           stateicp=="texas"~"TX",
+                           stateicp=="utah"~"UT",
+                           stateicp=="vermont"~"VT",
+                           stateicp=="virginia"~"VA",
+                           stateicp=="washington"~"WA",
+                           stateicp=="west virginia"~"WV",
+                           stateicp=="wisconsin"~"WI",
+                           stateicp=="wyoming"~"WY",
+                           stateicp=="district of columbia"~"DC")) 
+n_his$stateicp<-NULL
+
+unique(n_his$state)
+unique(futher_survey_cleaning$state)
+unique(his_age_sex$state)
+```
+
+# Model
+
+Here we are interested in predicting the popular vote outcome of the 2020 American federal election (include citation). To do this we are employing a post-stratification technique. In the following sub-sections I will describe the model specifics and the post-stratification calculation.
+
+
+## Model Specifics
+I fit a multilevel logistic regression, which is used to model a binary dependent variable, to predict the voting support for Donald Trump and Joe Biden. I use age as a numeric variable, gender and hispanic as dummy variables, to model the probability of voting for both candidates. The model is given by:
+
+$$ p(Yi = Donald \ Trump | state_j) = logit^{-1}(\beta_{j0} + \beta_{ji}^{age} + b_{[i]}^{gender} + b_{[i]}^{hispanic}) $$
+
+$\beta_{j0}$ represents the baseline intercept of the variable in group j. Here group j stands for the level 2 variable of state. $\beta_{j1}$ represents the slope for voters’ age fraction among all voters in each state. When the respondent’s state changes, the coefficient of both the intercept and the slope will be varying as well. Moreover, each categorical variable is represented as dummy variables and corresponds to the changing coefficients. $b_{[i]}^{gender}$ represents female and male and $b_{[i]}^{hispanic}$ represents dummy variables for Cuban, Mexican, Not hispanic, Other hispanic and Puerto Rican respectively. 
+
+```{r Model creation, warning=FALSE, echo=FALSE,include=FALSE}
+# Creating the Model
+modelt <- glmer(vote_trump ~ (1 + age|state) + gender + hispanic,
+                data=futher_survey_cleaning, family="binomial")
+
+modelb <- glmer(vote_biden ~ (1 + age|state) + gender + hispanic, 
+                data=futher_survey_cleaning, family="binomial")
+# Model Results (to Report in Results section)
+# summary(modelh)
+# OR
+# broom::tidy(model)
+summary(modelt)
+summary(modelb)
+```
+
+***
+```{r,warning=FALSE, echo=FALSE, message=FALSE}
+library(sjlabelled)
+library(sjPlot)
+library(sjmisc)
+tab_model(modelt,modelb,CSS = list(css.centeralign='text-align: center;'))
+```
+***
+
+## Post-Stratification 
+
+We use our multilevel regression model to predict the response voting rate for Trump or Biden in each state. Post stratification is a popular statistical technique to correct estimates when there are known differences between target population and study population. By applying post stratification to our census data, first all of is to partition the population into groups based on different attributes. Then, we may use samples to estimate the response variable in each group. Finally, it’s time to aggregate group level values by weighting each group by its corresponding proportion in population.
+In our model we grouped the population by their states, because the geographic location can influence an individual’s voting preferences. Then, we are interested in individuals’ voting intent and within each state we have 3 different variables: age, gender, and hispanic. We are able to predict a certain age group of female or male, that is considered to be a certain type of hispanic their preference in voting. Furthermore, by summing up all the outcomes over the entire population we are able to forecast the voting preference by this specific group of individuals.
+
+Candidate | Proportion of vote(with N/A) | Proportion of vote(without N/A) | Total number of vote(with N/A) | Total number of vote(without N/A)
+-----------|:-----------: |:-----------: |:-----------: |:-----------:|
+Donald Trump  | 0.4673645 | 0.4423356 | 87 | 115 
+Joe Biden | 0.4919042 | 0.5214619 | 451 | 423 
+
+```{r Data editing,warning=FALSE, echo=FALSE, message=FALSE ,include=FALSE}
+# Data editing
+glimpse(his_age_sex)
+glimpse(survey_data)
+# Data with NA in citizen category.
+his_age_sex<- his_age_sex %>% 
+  rename(gender = sex) %>% mutate(gender = ifelse(gender == "male","Male","Female"))
+his_age_sex <- his_age_sex  %>% mutate(age = age + 2)
+his_age_sex<- his_age_sex %>% rename(hispanic = hispan)
+his_age_sex[his_age_sex=="not hispanic"]<-"Not Hispanic"
+his_age_sex[his_age_sex=="other"]<-"Other Hispanic"
+his_age_sex[his_age_sex=="mexican"]<-"Mexican"
+his_age_sex[his_age_sex=="puerto rican"]<-"Puerto Rican"
+his_age_sex[his_age_sex=="cuban"]<-"Cuban"
+
+# Data without NA in citizen category. 
+n_his<- n_his %>% 
+  rename(gender = sex) %>% mutate(gender = ifelse(gender == "male","Male","Female"))
+n_his <- n_his  %>% mutate(age = age + 2)
+n_his<- n_his %>% rename(hispanic = hispan)
+n_his[n_his=="not hispanic"]<-"Not Hispanic"
+n_his[n_his=="other"]<-"Other Hispanic"
+n_his[n_his=="mexican"]<-"Mexican"
+n_his[n_his=="puerto rican"]<-"Puerto Rican"
+n_his[n_his=="cuban"]<-"Cuban"
+
+```
+
+```{r Process estimation, warning=FALSE, echo=FALSE, message=FALSE,include=FALSE}
+# TODO: The below was edited. See if any changes was needed. Maybe a calculation of p-value or something.
+# Here I will perform the post-stratification calculation
+# Data with NA in citizen category.
+his_age_sex$estimate_trump <-
+  modelt %>%
+  predict(newdata = his_age_sex, type = "response")
+
+his_age_sex$estimate_biden <-
+  modelb %>%
+  predict(newdata = his_age_sex, type = "response")
+
+his_age_sex %>%
+  mutate(alp_predict_prop = estimate_trump*n) %>%
+  summarise(trump_na_pre = sum(alp_predict_prop)/sum(n))
+
+his_age_sex %>%
+  mutate(alp_predict_prop = estimate_biden*n) %>%
+  summarise(biden_na_pre = sum(alp_predict_prop)/sum(n))
+
+# Data without NA in citizen category. 
+n_his$estimate_trump <-
+  modelt %>%
+  predict(newdata = n_his, type = "response")
+
+n_his$estimate_biden <-
+  modelb %>%
+  predict(newdata = n_his, type = "response")
+
+n_his %>%
+  mutate(alp_predict_prop = estimate_trump*n) %>%
+  summarise(trump_pre = sum(alp_predict_prop)/sum(n))
+
+n_his %>%
+  mutate(alp_predict_prop = estimate_biden*n) %>%
+  summarise(biden_pre = sum(alp_predict_prop)/sum(n))
+```
+
+```{r prediction by state with NA citizen, warning=FALSE, echo=FALSE, message=FALSE,include=FALSE}
+vote_2020_prob<-predict(modelt,his_age_sex[,c("age","gender","hispanic","state")],type="response")
+# vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Joe Biden","Donald Trump")
+vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Donald Trump","Joe Biden")
+his_age_sex.result<-cbind(his_age_sex,vote_2020_pred)
+
+his_age_sex.result$trump_votes<-ifelse(his_age_sex.result$vote_2020_pred=="Donald Trump",his_age_sex.result$perwt,0)
+his_age_sex.result$biden_votes<-ifelse(his_age_sex.result$vote_2020_pred=="Joe Biden",his_age_sex.result$perwt,0)
+
+his_age_sex.result %>% group_by(state) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_states_na
+predicted_states_na$winner<-ifelse(predicted_states_na$Trump>predicted_states_na$Biden,
+                                "Donald Trump","Joe Biden")
+
+predicted_states_na<-predicted_states_na %>% 
+  mutate(electoral_votes = case_when(state=="CA"~55,state=="TX"~38,state=="FL"~29,state=="NY"~29,state=="IL"~20,state=="PA"~20,state=="OH"~18,
+                                     state=="GA"~16,state=="MI"~16,state=="NC"~15,state=="NJ"~14,state=="VA"~13,state=="WA"~12,state=="AZ"~11,
+                                     state=="IN"~11,state=="MA"~11,state=="TN"~11,state=="MD"~10,state=="MN"~10,state=="MO"~10,state=="WI"~10,
+                                     state=="AL"~9,state=="CO"~9,state=="SC"~9,state=="KY"~8,state=="LA"~8,state=="CT"~7,state=="OK"~7,
+                                     state=="OR"~7,state=="AR"~6,state=="IA"~6,state=="KS"~6,state=="MS"~6,state=="NV"~6,state=="UT"~6,
+                                     state=="NE"~5,state=="NM"~5,state=="WV"~5,state=="HI"~4,state=="ID"~4,state=="ME"~4,state=="NH"~4,
+                                     state=="RI"~4,state=="AK"~3,state=="DE"~3,state=="MT"~3,state=="ND"~3,state=="SD"~3,state=="VT"~3,
+                                     state=="WY"~3,state=="DC"~3
+  )) 
+
+
+predicted_states_na %>% group_by(winner) %>% summarise(total_votes=sum(electoral_votes))->election_result
+election_result
+
+```
+
+```{r prediction by state without NA citizen, warning=FALSE, echo=FALSE, message=FALSE,include=FALSE}
+vote_2020_prob_n<-predict(modelt,n_his[,c("age","gender","hispanic","state")],type="response")
+# vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Joe Biden","Donald Trump")
+vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Donald Trump","Joe Biden")
+n_his.result<-cbind(n_his,vote_2020_pred_n)
+
+n_his.result$trump_votes<-ifelse(n_his.result$vote_2020_pred=="Donald Trump",n_his.result$perwt,0)
+n_his.result$biden_votes<-ifelse(n_his.result$vote_2020_pred=="Joe Biden",n_his.result$perwt,0)
+
+n_his.result %>% group_by(state) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_states
+predicted_states$winner<-ifelse(predicted_states$Trump>predicted_states$Biden,
+                                "Donald Trump","Joe Biden")
+
+predicted_states<-predicted_states %>% 
+  mutate(electoral_votes = case_when(state=="CA"~55,state=="TX"~38,state=="FL"~29,state=="NY"~29,state=="IL"~20,state=="PA"~20,state=="OH"~18,
+                                     state=="GA"~16,state=="MI"~16,state=="NC"~15,state=="NJ"~14,state=="VA"~13,state=="WA"~12,state=="AZ"~11,
+                                     state=="IN"~11,state=="MA"~11,state=="TN"~11,state=="MD"~10,state=="MN"~10,state=="MO"~10,state=="WI"~10,
+                                     state=="AL"~9,state=="CO"~9,state=="SC"~9,state=="KY"~8,state=="LA"~8,state=="CT"~7,state=="OK"~7,
+                                     state=="OR"~7,state=="AR"~6,state=="IA"~6,state=="KS"~6,state=="MS"~6,state=="NV"~6,state=="UT"~6,
+                                     state=="NE"~5,state=="NM"~5,state=="WV"~5,state=="HI"~4,state=="ID"~4,state=="ME"~4,state=="NH"~4,
+                                     state=="RI"~4,state=="AK"~3,state=="DE"~3,state=="MT"~3,state=="ND"~3,state=="SD"~3,state=="VT"~3,
+                                     state=="WY"~3,state=="DC"~3
+  )) 
+
+
+predicted_states %>% group_by(winner) %>% summarise(total_votes=sum(electoral_votes))->election_result
+election_result
+
+```
+
+Thus, we compute Trump's support rate is 21.37%, and Biden's support rate is 78.62%.
+
+```{r Support rate, message=FALSE,echo=FALSE, include=FALSE}
+support_rate_trump <- 115/538
+support_rate_trump
+
+support_rate_biden <- 423/538
+support_rate_biden
+```
+
+```{r tester, warning=FALSE, echo=FALSE, message=FALSE,include=FALSE}
+# library(tableHTML)
+n_his.result %>% group_by(hispanic) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_hispanic
+predicted_hispanic$winner<-ifelse(predicted_hispanic$Trump>predicted_hispanic$Biden,
+                                "Donald Trump","Joe Biden")
+glimpse(predicted_hispanic)
+# tableHTML(predicted_hispanic)
+```
+
+```{r plot, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE}
+n_his.result %>%
+  ggplot(aes(y = estimate_trump, x = forcats::fct_inorder(state), 
+             color = "Support rate estimate")) + geom_point() +
+  ylab("Proportion Support Trump") + xlab("State") + 
+  geom_point(data = n_his.result %>%
+               group_by(state, estimate_trump) %>% summarise(n = n()) %>% 
+               group_by(state) %>%
+               mutate(prop = n/sum(n))) + coord_flip()
+
+predicted_states %>%
+  filter(winner!="Joe Biden") %>%
+  ggplot(aes(y = electoral_votes, x = forcats::fct_inorder(state), 
+             color = "Election estimate")) + geom_point() +
+  ylab("State Support Trump") + xlab("Amount of the credit") + coord_flip()
+
+predicted_states %>%
+  filter(winner!="Donald Trump") %>%
+  ggplot(aes(y = electoral_votes, x = forcats::fct_inorder(state), 
+             color = "Election estimate")) + geom_point() +
+  ylab("State Support Biden") + xlab("Amount of the credit") + coord_flip()
+```
+\newline
+\newline
+
+# Results
+$\hat{y}^{PS}$ is the weighted average of the estimate in each cell over the entire population size. By using the post-stratification process we are able to calculate  $\hat{y}^{PS}$ for both Trump and Biden. Our estimate of the proportion of voters who supports Trump is $0.4423359$, based on our post stratification model of proportion of voters who support Trump by a logistic regression model, which contains the variables age, gender and hispanic. Likewise for Biden the $\hat{y}^{PS}$ is $0.5214624$ using the same logistic regression model and variables. The model of Trump has a lower value of AIC which evaluates how well a model fits the data, so we prefer to choose Trump’s model. In addition, we estimate, out of $538$ votes cast in all $50$ states, Trump will get $423$ to Biden's $115$.
+
+# Discussion
+
+\textbf{Summary:}
+Using the census data and the survey data that was collected based on the US citizen’s preference on voting, we are able to conduct some analysis and predict who might have a higher chance in winning the election. Our interests of variables are age, gender, hispanic, geographic location, and preference in voting for Trump or Biden. First we fitted a multilevel regression model, to investigate the relationship between voting for Trump and an individual's age, gender, hispanic type and state of living, similar process is applied for voting Biden as well. Then we grouped the population by states, and studied the voting preference in each group to forecast the voting result of the entire population. 
+
+\textbf{Conclusion:}
+Based on our post stratification model, by partition the population based on states and calculated the total outcome by the weighted outcome in each state over the entire sample size. We are able to conclude our estimated proportion of voters in favor of Biden is around $52\%$,  while the voters who favor Trump is around $44\%$, with the other $4\%$ favoring someone else. Therefore we are able to predict that Biden will probably win the election. However, American election count votes based on state instead of individual, thus we performed an calculation based on state, and through calculation, we found that Trump is estimated to get $21.4\%$ of the total votes, while Biden may get $78.6\%$ of the votes. According to the analysis above, we would conclude that Biden is more likely to win the election. 
+
+## Weaknesses
+
+The survey data was collected on June,25,2020, which fails to inform anything new at the first time. We delete several variables like people who are not voting or not sure to vote from the raw dataset. However, those voters might change their mind and vote later. The removal of variables causes a weakness to sample observations and it may affect the accuracy of our modeling while doing predictions. Besides, the survey data records individuals’ voting counts, though the President is not elected directly by the voters, but by the states. So, the candidate with a high proportion of individual voters may not absolutely win the election at the end.
+
+
+## Next Steps
+
+We will compare our estimation  with actual election results. For the future election estimation, we could combine historical election poll results with present survey data, and investigate if each state prefers  Republican party or Democratic party presidential candidates.
+
+
+# References
+1. Tausanovitch, Chris and Lynn Vavreck. 2020. Democracy Fund + UCLA Nationscape, October 10-17, 2019 (version 20200814). https://www.voterstudygroup.org/downloads?key=bdb6ff88-27ff-444c-bac1-f8f7c7e87c41
+2. Steven Ruggles, Sarah Flood, Ronald Goeken, Josiah Grover, Erin Meyer, Jose Pacas and Matthew Sobek. IPUMS USA: Version 10.0 [dataset]. Minneapolis, MN: IPUMS, 2020. https://doi.org/10.18128/D010.V10.0
+3. Wang W., et al., Forecasting elections with non-representative polls. International Journal of Forecasting (2014). http://doi:10.1016/j.ijforecast.2014.06.001
+
+
+\newpage
+## Appendix
+
+github link: https://github.com/xuxiny17/A3.git
+\newline
+
+Table 1 
+```{r ,warning=FALSE, echo=FALSE,message=FALSE}
+modelt <- glmer(vote_trump ~ (1 + age|state) + gender + hispanic,
+                data=futher_survey_cleaning, family="binomial")
+summary(modelt)
+```
+
+Table 2
+
+```{r,warning=FALSE, echo=FALSE, message=FALSE}
+modelb <- glmer(vote_biden ~ (1 + age|state) + gender + hispanic, 
+                data=futher_survey_cleaning, family="binomial")
+summary(modelb)
+```
+
+Table 3
+
+```{r ,warning=FALSE, echo=FALSE, message=FALSE}
+# library(tableHTML)
+n_his.result %>% group_by(hispanic) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_hispanic
+predicted_hispanic$winner<-ifelse(predicted_hispanic$Trump>predicted_hispanic$Biden,
+                                "Donald Trump","Joe Biden")
+glimpse(predicted_hispanic)
+# tableHTML(predicted_hispanic)
+```
+
+Graph 1-3
+
+```{r ,warning=FALSE, echo=FALSE,message=FALSE}
+n_his.result %>%
+  ggplot(aes(y = estimate_trump, x = forcats::fct_inorder(state), 
+             color = "Support rate estimate")) + geom_point() +
+  ylab("Proportion Support Trump") + xlab("State") + 
+  geom_point(data = n_his.result %>%
+               group_by(state, estimate_trump) %>% summarise(n = n()) %>% 
+               group_by(state) %>%
+               mutate(prop = n/sum(n))) + coord_flip()
+
+predicted_states %>%
+  filter(winner!="Joe Biden") %>%
+  ggplot(aes(y = electoral_votes, x = forcats::fct_inorder(state), 
+             color = "Election estimate")) + geom_point() +
+  ylab("State Support Trump") + xlab("Amount of the credit") + coord_flip()
+
+predicted_states %>%
+  filter(winner!="Donald Trump") %>%
+  ggplot(aes(y = electoral_votes, x = forcats::fct_inorder(state), 
+             color = "Election estimate")) + geom_point() +
+  ylab("State Support Biden") + xlab("Amount of the credit") + coord_flip()
+```
+
+
