@@ -29,7 +29,6 @@ survey_data[survey_data=="Salvadorean"]<-"Other Hispanic"
 survey_data[survey_data=="Spanish"]<-"Other Hispanic"
 survey_data[survey_data=="Venezuelan"]<-"Other Hispanic"
 
-# TODO: Should we deleat the code below?
 # futher_survey_cleaning <- 
 #   survey_data %>% 
 #   select(vote_2020,
