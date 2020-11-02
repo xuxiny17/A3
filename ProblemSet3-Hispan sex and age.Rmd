@@ -296,21 +296,43 @@ n_his %>%
   summarise(alp_predict = sum(alp_predict_prop)/sum(n))
 ```
 
-```{r tester}
+```{r prediction by state with NA citizen, warning=FALSE}
 # TODO: The following prediction does not seem to make sense, tell me about your conclusion. 
-vote_2020_prob_n<-predict(modelt,n_his[,c("age","gender","hispanic","state")],type="response")
-vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Joe Biden","Donald Trump")
-n_his.result<-cbind(n_his,vote_2020_pred_n)
-
 vote_2020_prob<-predict(modelt,his_age_sex[,c("age","gender","hispanic","state")],type="response")
 vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Joe Biden","Donald Trump")
 his_age_sex.result<-cbind(his_age_sex,vote_2020_pred)
 
-n_his.result$trump_votes<-ifelse(n_his.result$vote_2020_pred=="Donald Trump",n_his.result$perwt,0)
-n_his.result$biden_votes<-ifelse(n_his.result$vote_2020_pred=="Joe Biden",n_his.result$perwt,0)
-
 his_age_sex.result$trump_votes<-ifelse(his_age_sex.result$vote_2020_pred=="Donald Trump",his_age_sex.result$perwt,0)
 his_age_sex.result$biden_votes<-ifelse(his_age_sex.result$vote_2020_pred=="Joe Biden",his_age_sex.result$perwt,0)
+
+his_age_sex.result %>% group_by(state) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_states_na
+predicted_states_na$winner<-ifelse(predicted_states_na$Trump>predicted_states_na$Biden,
+                                "Donald Trump","Joe Biden")
+
+predicted_states_na<-predicted_states_na %>% 
+  mutate(electoral_votes = case_when(state=="CA"~55,state=="TX"~38,state=="FL"~29,state=="NY"~29,state=="IL"~20,state=="PA"~20,state=="OH"~18,
+                                     state=="GA"~16,state=="MI"~16,state=="NC"~15,state=="NJ"~14,state=="VA"~13,state=="WA"~12,state=="AZ"~11,
+                                     state=="IN"~11,state=="MA"~11,state=="TN"~11,state=="MD"~10,state=="MN"~10,state=="MO"~10,state=="WI"~10,
+                                     state=="AL"~9,state=="CO"~9,state=="SC"~9,state=="KY"~8,state=="LA"~8,state=="CT"~7,state=="OK"~7,
+                                     state=="OR"~7,state=="AR"~6,state=="IA"~6,state=="KS"~6,state=="MS"~6,state=="NV"~6,state=="UT"~6,
+                                     state=="NE"~5,state=="NM"~5,state=="WV"~5,state=="HI"~4,state=="ID"~4,state=="ME"~4,state=="NH"~4,
+                                     state=="RI"~4,state=="AK"~3,state=="DE"~3,state=="MT"~3,state=="ND"~3,state=="SD"~3,state=="VT"~3,
+                                     state=="WY"~3,state=="DC"~3
+  )) 
+
+
+predicted_states_na %>% group_by(winner) %>% summarise(total_votes=sum(electoral_votes))->election_result
+election_result
+
+```
+
+```{r prediction by state without NA citizen, warning=FALSE}
+vote_2020_prob_n<-predict(modelt,n_his[,c("age","gender","hispanic","state")],type="response")
+vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Joe Biden","Donald Trump")
+n_his.result<-cbind(n_his,vote_2020_pred_n)
+
+n_his.result$trump_votes<-ifelse(n_his.result$vote_2020_pred=="Donald Trump",n_his.result$perwt,0)
+n_his.result$biden_votes<-ifelse(n_his.result$vote_2020_pred=="Joe Biden",n_his.result$perwt,0)
 
 n_his.result %>% group_by(state) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_states
 predicted_states$winner<-ifelse(predicted_states$Trump>predicted_states$Biden,
@@ -330,9 +352,7 @@ predicted_states<-predicted_states %>%
 
 predicted_states %>% group_by(winner) %>% summarise(total_votes=sum(electoral_votes))->election_result
 election_result
-
 ```
-
 # Results
 
 Here you will include all results. This includes descriptive statistics, graphs, figures, tables, and model results. Please ensure that everything is well formatted and in a report style. You must also provide an explanation of the results in this section. 
