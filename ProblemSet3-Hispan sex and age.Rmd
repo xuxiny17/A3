@@ -1,11 +1,20 @@
 ---
-title: "Title of Your Report"
-author: "Xu Xinyi" # Add names here 
+title: "Forecasting elections of US2020"
+author: Xu Xinyi 1003941577, 
+        Minchen Cai 1000523800, 
+        Haona Yang 1004949531, 
+        Mingkai Zhang 1004903063
 date: "2020/10/31"
+header-includes:
+   - \usepackage{bbm}
+   - \usepackage{threeparttable}
+   - \usepackage{booktabs}
+   - \usepackage{expex}
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: 
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
@@ -170,9 +179,9 @@ unique(futher_survey_cleaning$state)
 unique(his_age_sex$state)
 ```
 
-# Title of your Report
+# Forecasting elections of US2020
 
-## Xu Xinyi  
+## Xu Xinyi, Minchen Cai, Haona Yang, Mingkai Zhang
 ## 2020/10/31
 
 
@@ -182,12 +191,11 @@ Here we are interested in predicting the popular vote outcome of the 2020 Americ
 
 
 ## Model Specifics
-I will (incorrectly) be using a linear regression model to model the proportion of voters who will vote for Donald Trump. This is a naive model. I will only be using age, which is recorded as a numeric variable, to model the probability of voting for Donald Trump. The simple linear regression model I am using is:
+I fit a multilevel logistic regression, which is used to model a binary dependent variable, to predict the voting support for Donald Trump and Joe Biden. I use age as a numeric variable, gender and hispanic as dummy variables, to model the probability of voting for both candidates. The model is given by:
 
-#TODO change the following model interpretation
 $$ p(Yi = Donald \ Trump | state_j) = logit^{-1}(\beta_{j0} + \beta_{ji}^{age} + b_{[i]}^{gender} + b_{[i]}^{hispanic}) $$
 
-Where $y$ represents the proportion of voters who will vote for Donald Trump. Similarly, $\beta_0$ represents the intercept of the model, and is the probability of voting for Donald Trump at age 0. Additionally, $\beta_1$ represents the slope of the model. So, for everyone one unit increase in age, we expect a $\beta_1$ increase in the probability of voting for Donald Trump.
+$\beta_{j0}$ represents the baseline intercept of the variable in group j. Here group j stands for the level 2 variable of state. $\beta_{j1}$ represents the slope for voters’ age fraction among all voters in each state. When the respondent’s state changes, the coefficient of both the intercept and the slope will be varying as well. Moreover, each categorical variable is represented as dummy variables and corresponds to the changing coefficients. $b_{[i]}^{gender}$ represents female and male and $b_{[i]}^{hispanic})$ represents dummy variables for Cuban, Mexican, Not hispanic, Other hispanic and Puerto Rican respectively. 
 
 ```{r Model creation, warning=FALSE, echo=FALSE}
 # Creating the Model
@@ -202,11 +210,18 @@ modelb <- glmer(vote_biden ~ (1 + age|state) + gender + hispanic,
 # broom::tidy(model)
 summary(modelt)
 summary(modelb)
+library(sjlabelled)
+library(sjPlot)
+library(sjmisc)
+tab_model(modelt,CSS = list(css.centeralign='text-align: center;'))
+tab_model(modelb,CSS = list(css.centeralign='text-align: center;'))
 ```
 
 ## Post-Stratification 
 
-In order to estimate the proportion of voters who will vote for Donald Trump I need to perform a post-stratification analysis. Here I create cells based off different ages. Using the model described in the previous sub-section I will estimate the proportion of voters in each age bin. I will then weight each proportion estimate (within each bin) by the respective population size of that bin and sum those values and divide that by the entire population size. 
+We use our multilevel regression model to predict the response voting rate for Trump or Biden in each state. Post stratification is a popular statistical technique to correct estimates when there are known differences between target population and study population. By applying post stratification to our census data, first all of is to partition the population into groups based on different attributes. Then, we may use samples to estimate the response variable in each group. Finally, it’s time to aggregate group level values by weighting each group by its corresponding proportion in population.
+In our model we grouped the population by their states, because the geographic location can influence an individual’s voting preferences. Then, we are interested in individuals’ voting intent and within each state we have 3 different variables: age, gender, and hispanic. We are able to predict a certain age group of female or male, that is considered to be a certain type of hispanic their preference in voting. Furthermore, by summing up all the outcomes over the entire population we are able to forecast the voting preference by this specific group of individuals.
+
 
 ```{r Data editing, include=FALSE}
 # Data editing
@@ -250,11 +265,11 @@ his_age_sex$estimate_biden <-
 
 his_age_sex %>%
   mutate(alp_predict_prop = estimate_trump*n) %>%
-  summarise(alp_predict = sum(alp_predict_prop)/sum(n))
+  summarise(trump_na_pre = sum(alp_predict_prop)/sum(n))
 
 his_age_sex %>%
   mutate(alp_predict_prop = estimate_biden*n) %>%
-  summarise(alp_predict = sum(alp_predict_prop)/sum(n))
+  summarise(biden_na_pre = sum(alp_predict_prop)/sum(n))
 
 # Data without NA in citizen category. 
 n_his$estimate_trump <-
@@ -267,14 +282,14 @@ n_his$estimate_biden <-
 
 n_his %>%
   mutate(alp_predict_prop = estimate_trump*n) %>%
-  summarise(alp_predict = sum(alp_predict_prop)/sum(n))
+  summarise(trump_pre = sum(alp_predict_prop)/sum(n))
 
 n_his %>%
   mutate(alp_predict_prop = estimate_biden*n) %>%
-  summarise(alp_predict = sum(alp_predict_prop)/sum(n))
+  summarise(biden_pre = sum(alp_predict_prop)/sum(n))
 ```
 
-```{r prediction by state with NA citizen, warning=FALSE, echo=FALSE}
+```{r prediction by state with NA citizen, warning=FALSE, echo=FALSE, message=FALSE}
 vote_2020_prob<-predict(modelt,his_age_sex[,c("age","gender","hispanic","state")],type="response")
 # vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Joe Biden","Donald Trump")
 vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Donald Trump","Joe Biden")
@@ -304,7 +319,7 @@ election_result
 
 ```
 
-```{r prediction by state without NA citizen, warning=FALSE}
+```{r prediction by state without NA citizen, warning=FALSE, echo=FALSE, message=FALSE}
 vote_2020_prob_n<-predict(modelt,n_his[,c("age","gender","hispanic","state")],type="response")
 # vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Joe Biden","Donald Trump")
 vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Donald Trump","Joe Biden")
@@ -334,7 +349,7 @@ election_result
 
 ```
 
-```{r Support rate}
+```{r Support rate, message=FALSE,echo=FALSE}
 support_rate_trump <- 115/538
 support_rate_trump
 
@@ -342,16 +357,16 @@ support_rate_biden <- 423/538
 support_rate_biden
 ```
 
-```{r tester, warning=FALSE, echo=FALSE}
-library(tableHTML)
+```{r tester, warning=FALSE, echo=FALSE, message=FALSE}
+# library(tableHTML)
 n_his.result %>% group_by(hispanic) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_hispanic
 predicted_hispanic$winner<-ifelse(predicted_hispanic$Trump>predicted_hispanic$Biden,
                                 "Donald Trump","Joe Biden")
-# glimpse(predicted_hispanic)
-tableHTML(predicted_hispanic)
+glimpse(predicted_hispanic)
+# tableHTML(predicted_hispanic)
 ```
 
-```{r plot, warning=FALSE, echo=FALSE}
+```{r plot, warning=FALSE, echo=FALSE, message=FALSE}
 n_his.result %>%
   ggplot(aes(y = estimate_trump, x = forcats::fct_inorder(state), 
              color = "Support rate estimate")) + geom_point() +
@@ -373,26 +388,35 @@ predicted_states %>%
              color = "Election estimate")) + geom_point() +
   ylab("State Support Biden") + xlab("Amount of the credit") + coord_flip()
 ```
+\newline
+\newline
+
 # Results
-
-Here you will include all results. This includes descriptive statistics, graphs, figures, tables, and model results. Please ensure that everything is well formatted and in a report style. You must also provide an explanation of the results in this section. 
-
-Please ensure that everything is well labelled. So if you have multiple histograms and plots, calling them Figure 1, 2, 3, etc. and referencing them as Figure 1, Figure 2, etc. in your report will be expected. The reader should not get lost in a sea of information. Make sure to have the results be clean, well formatted and digestible.
+$\hat{y}^{PS}$ is the weighted average of the estimate in each cell over the entire population size. By using the post-stratification process we are able to calculate  $\hat{y}^{PS}$ for both Trump and Biden. Our estimate of the proportion of voters who supports Trump is $0.4423359$, based on our post stratification model of proportion of voters who support Trump by a logistic regression model, which contains the variables age, gender and hispanic. Likewise for Biden the $\hat{y}^{PS}$ is $0.5214624$ using the same logistic regression model and variables. The model of Trump has a lower value of AIC which evaluates how well a model fits the data, so we prefer to choose Trump’s model. In addition, we estimate, out of $538$ votes cast in all $50$ states, Trump will get $423$ to Biden's $115$.
 
 # Discussion
 
-Here you will summarize the previous sections and discuss conclusions drawn from the results. Make sure to elaborate and connect your analysis to the goal of the study.
+\textbf{Summary:}
+Using the census data and the survey data that was collected based on the US citizen’s preference on voting, we are able to conduct some analysis and predict who might have a higher chance in winning the election. Our interests of variables are age, gender, hispanic, geographic location, and preference in voting for Trump or Biden. First we fitted a multilevel regression model, to investigate the relationship between voting for Trump and an individual's age, gender, hispanic type and state of living, similar process is applied for voting Biden as well. Then we grouped the population by states, and studied the voting preference in each group to forecast the voting result of the entire population. 
+
+\textbf{Conclusion:}
+Based on our post stratification model, by partition the population based on states and calculated the total outcome by the weighted outcome in each state over the entire sample size. We are able to conclude our estimated proportion of voters in favor of Biden is around $52\%$,  while the voters who favor Trump is around $44\%$, with the other $4\%$ favoring someone else. Therefore we are able to predict that Biden will probably win the election. However, American election count votes based on state instead of individual, thus we performed an calculation based on state, and through calculation, we found that Trump is estimated to get $21.4\%$ of the total votes, while Biden may get $78.6\%$ of the votes. According to the analysis above, we would conclude that Biden is more likely to win the election. 
+
 
 ## Weaknesses
 
-Here we discuss weaknesses of the study, data, analysis, etc. You can also discuss areas for improvement.
+The survey data was collected on June,25,2020, which fails to inform anything new at the first time. We delete several variables like people who are not voting or not sure to vote from the raw dataset. However, those voters might change their mind and vote later. The removal of variables causes a weakness to sample observations and it may affect the accuracy of our modeling while doing predictions. Besides, the survey data records individuals’ voting counts, though the President is not elected directly by the voters, but by the states. So, the candidate with a high proportion of individual voters may not absolutely win the election at the end.
+
 
 ## Next Steps
 
-Here you discuss subsequent work to be done after this report. This can include next steps in terms of statistical analysis (perhaps there is a more efficient algorithm available, or perhaps there is a caveat in the data that would allow for some new technique). Future steps should also be specified in terms of the study setting (eg. including a follow-up survey on something, or a subsequent study that would complement the conclusions of your report).
+We will compare our estimation  with actual election results. For the future election estimation, we could combine historical election poll results with present survey data, and investigate if each state prefers  Republican party or Democratic party presidential candidates.
 
 
 # References
+1. Tausanovitch, Chris and Lynn Vavreck. 2020. Democracy Fund + UCLA Nationscape, October 10-17, 2019 (version 20200814). https://www.voterstudygroup.org/downloads?key=bdb6ff88-27ff-444c-bac1-f8f7c7e87c41
+2. Steven Ruggles, Sarah Flood, Ronald Goeken, Josiah Grover, Erin Meyer, Jose Pacas and Matthew Sobek. IPUMS USA: Version 10.0 [dataset]. Minneapolis, MN: IPUMS, 2020. https://doi.org/10.18128/D010.V10.0
+3. Wang W., et al., Forecasting elections with non-representative polls. International Journal of Forecasting (2014). http://doi:10.1016/j.ijforecast.2014.06.001
 
 
 
