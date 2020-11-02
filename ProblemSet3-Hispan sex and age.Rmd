@@ -289,9 +289,9 @@ n_his %>%
 ```
 
 ```{r prediction by state with NA citizen, warning=FALSE}
-# TODO: The following prediction does not seem to make sense, tell me about your conclusion. 
 vote_2020_prob<-predict(modelt,his_age_sex[,c("age","gender","hispanic","state")],type="response")
 vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Joe Biden","Donald Trump")
+# vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Donald Trump","Joe Biden")
 his_age_sex.result<-cbind(his_age_sex,vote_2020_pred)
 
 his_age_sex.result$trump_votes<-ifelse(his_age_sex.result$vote_2020_pred=="Donald Trump",his_age_sex.result$perwt,0)
@@ -321,6 +321,7 @@ election_result
 ```{r prediction by state without NA citizen, warning=FALSE}
 vote_2020_prob_n<-predict(modelt,n_his[,c("age","gender","hispanic","state")],type="response")
 vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Joe Biden","Donald Trump")
+# vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Donald Trump","Joe Biden")
 n_his.result<-cbind(n_his,vote_2020_pred_n)
 
 n_his.result$trump_votes<-ifelse(n_his.result$vote_2020_pred=="Donald Trump",n_his.result$perwt,0)
@@ -345,6 +346,15 @@ predicted_states<-predicted_states %>%
 predicted_states %>% group_by(winner) %>% summarise(total_votes=sum(electoral_votes))->election_result
 election_result
 ```
+
+```{r tester, warning=FALSE}
+library(expss)
+n_his.result %>% group_by(hispanic) %>% summarise(Trump=sum(trump_votes),Biden=sum(biden_votes))->predicted_hispanic
+predicted_hispanic$winner<-ifelse(predicted_hispanic$Trump>predicted_hispanic$Biden,
+                                "Donald Trump","Joe Biden")
+glimpse(predicted_hispanic)
+```
+
 # Results
 
 Here you will include all results. This includes descriptive statistics, graphs, figures, tables, and model results. Please ensure that everything is well formatted and in a report style. You must also provide an explanation of the results in this section. 
