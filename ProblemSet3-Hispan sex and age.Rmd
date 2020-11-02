@@ -248,14 +248,6 @@ n_his[n_his=="mexican"]<-"Mexican"
 n_his[n_his=="puerto rican"]<-"Puerto Rican"
 n_his[n_his=="cuban"]<-"Cuban"
 
-#TODO: figure out if we could use the code below or simply delete it.
-# his_age_sex <- his_age_sex %>% rename(hispan = hispanic) %>% 
-#   mutate(gender = ifelse(hispan == "not hispanic","Not Hispanic")) %>% 
-#   mutate(gender = ifelse(hispan == "mexican","Mexican")) %>% 
-#   mutate(gender = ifelse(hispan == "puerto rican","Puerto Rican")) %>% 
-#   mutate(gender = ifelse(hispan == "cuban","Cuban")) %>% 
-#   mutate(gender = ifelse(hispan == "other","Other Hispanic"))
-
 ```
 
 ```{r Process estimation}
