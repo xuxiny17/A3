@@ -51,15 +51,16 @@ reduced_data<-
   filter(registration=="Registered") %>% 
   filter(vote_intention!="No, I am not eligible to vote") %>%
   filter(vote_intention!="No, I will not vote but I am eligible") %>%
-#  filter(vote_2020 != "I am not sure/don't know") %>% 
-  mutate(vote_trump = 
-           ifelse(vote_2020=="Donald Trump", 1, 0)) %>% 
-  mutate(vote_biden = 
-           ifelse(vote_2020=="Joe Biden", 1, 0)) %>% 
-  mutate(vote_not_sure = 
+  filter(vote_2020=="Donald Trump"|vote_2020=="Joe Biden") %>%
+ # filter(vote_2020 != "I am not sure/don't know") %>%
+  mutate(vote_trump =
+           ifelse(vote_2020=="Donald Trump", 1, 0)) %>%
+  mutate(vote_biden =
+           ifelse(vote_2020=="Joe Biden", 1, 0)) %>%
+  mutate(vote_not_sure =
            ifelse(vote_2020 == "I am not sure/don't know",1,0))
 
 # Saving the survey/sample data as a csv file in my
 # working directory
-write_csv(reduced_data, "survey_data_2.csv")
+write_csv(reduced_data, "survey_data_4.csv")
 

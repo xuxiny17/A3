@@ -44,18 +44,6 @@ survey_data[survey_data=="Venezuelan"]<-"Other Hispanic"
 #   
 # write_csv(futher_survey_cleaning, "futher_survey_cleaning.csv")
 
-
-# survey_data$hispanic <- case_when("Colombian","Other Hispanic")
-  # mutate_(hispanic = ifelse(hispanic == "Colombian","Other Hispanic")) %>% 
-  # mutate_(hispanic = ifelse(hispanic == "Ecuadorian","Other Hispanic")) %>% 
-  # mutate_(hispanic = ifelse(hispanic == "Guatemalan","Other Hispanic")) %>% 
-  # mutate_(hispanic = ifelse(hispanic == "Nicaraguan","Other Hispanic")) %>% 
-  # mutate_(hispanic = ifelse(hispanic == "Panamanian","Other Hispanic")) %>% 
-  # mutate_(hispanic = ifelse(hispanic == "Peruvian","Other Hispanic")) %>% 
-  # mutate_(hispanic = ifelse(hispanic == "Salvadorean","Other Hispanic")) %>%
-  # mutate_(hispanic = ifelse(hispanic == "Spanish","Other Hispanic")) %>%
-  # mutate_(hispanic = ifelse(hispanic == "Venezuelan","Other Hispanic"))
-
 # Loading in the cleaned census Data
 # census_data <- read_csv("census_data.csv")
 
@@ -197,7 +185,7 @@ Here we are interested in predicting the popular vote outcome of the 2020 Americ
 I will (incorrectly) be using a linear regression model to model the proportion of voters who will vote for Donald Trump. This is a naive model. I will only be using age, which is recorded as a numeric variable, to model the probability of voting for Donald Trump. The simple linear regression model I am using is:
 
 #TODO change the following model interpretation
-$$ log(\frac{p}{1-p}) = \beta_0+\beta_1  x_{age} + \beta_2x_{Male} + \beta_3x_{hispanic} + \epsilon$$
+$$ p(Yi = Donald \ Trump | state_j) = logit^{-1}(\beta_{j0} + \beta_{ji}^{age} + b_{[i]}^{gender} + b_{[i]}^{hispanic}) $$
 
 Where $y$ represents the proportion of voters who will vote for Donald Trump. Similarly, $\beta_0$ represents the intercept of the model, and is the probability of voting for Donald Trump at age 0. Additionally, $\beta_1$ represents the slope of the model. So, for everyone one unit increase in age, we expect a $\beta_1$ increase in the probability of voting for Donald Trump.
 
@@ -287,10 +275,10 @@ n_his %>%
   summarise(alp_predict = sum(alp_predict_prop)/sum(n))
 ```
 
-```{r prediction by state with NA citizen, warning=FALSE}
+```{r prediction by state with NA citizen, warning=FALSE, echo=FALSE}
 vote_2020_prob<-predict(modelt,his_age_sex[,c("age","gender","hispanic","state")],type="response")
-vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Joe Biden","Donald Trump")
-# vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Donald Trump","Joe Biden")
+# vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Joe Biden","Donald Trump")
+vote_2020_pred<-ifelse(vote_2020_prob>0.5,"Donald Trump","Joe Biden")
 his_age_sex.result<-cbind(his_age_sex,vote_2020_pred)
 
 his_age_sex.result$trump_votes<-ifelse(his_age_sex.result$vote_2020_pred=="Donald Trump",his_age_sex.result$perwt,0)
@@ -319,8 +307,8 @@ election_result
 
 ```{r prediction by state without NA citizen, warning=FALSE}
 vote_2020_prob_n<-predict(modelt,n_his[,c("age","gender","hispanic","state")],type="response")
-vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Joe Biden","Donald Trump")
-# vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Donald Trump","Joe Biden")
+# vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Joe Biden","Donald Trump")
+vote_2020_pred_n<-ifelse(vote_2020_prob_n>0.5,"Donald Trump","Joe Biden")
 n_his.result<-cbind(n_his,vote_2020_pred_n)
 
 n_his.result$trump_votes<-ifelse(n_his.result$vote_2020_pred=="Donald Trump",n_his.result$perwt,0)
