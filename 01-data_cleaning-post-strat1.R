@@ -38,7 +38,8 @@ reduced_data <-
          empstat,
          labforce,
          inctot,
-         ftotinc)
+         ftotinc,
+         perwt)
 
 #### What's next? ####
 
@@ -50,20 +51,19 @@ reduced_data <-
   filter(age != "less than 1 year old") %>%
   filter(age %in% 16:90) %>%
   filter(age != "90 (90+ in 1980 and 1990)") %>%
-  filter(citizen != "not a citizen")
+  filter(citizen != "not a citizen") #%>%
+  #filter(citizen != "n/a")
+  
   
 reduced_data <- 
   reduced_data %>%
-  count(age, sex, hispan) %>%
-  group_by(age, sex, hispan) 
+  count(age, sex, hispan, stateicp, perwt) %>%
+  group_by(age, sex, hispan,stateicp, perwt) 
   
 
 reduced_data$age <- as.integer(reduced_data$age)
 
 # Saving the census data as a csv file in my
 # working directory
-write_csv(reduced_data, "census_data.csv")
-
-
-
+write_csv(reduced_data, "his_age_sex.csv")
          

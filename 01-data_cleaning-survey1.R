@@ -47,7 +47,10 @@ reduced_data <-
 # Is vote a binary? If not, what are you going to do?
 reduced_data<-
   reduced_data %>%
-  filter(vote_2020 != "I would not vote" ) %>% 
+  filter(vote_2020 != "I would not vote") %>%
+  filter(registration=="Registered") %>% 
+  filter(vote_intention!="No, I am not eligible to vote") %>%
+  filter(vote_intention!="No, I will not vote but I am eligible") %>%
 #  filter(vote_2020 != "I am not sure/don't know") %>% 
   mutate(vote_trump = 
            ifelse(vote_2020=="Donald Trump", 1, 0)) %>% 
@@ -58,5 +61,5 @@ reduced_data<-
 
 # Saving the survey/sample data as a csv file in my
 # working directory
-write_csv(reduced_data, "survey_data.csv")
+write_csv(reduced_data, "survey_data_2.csv")
 
